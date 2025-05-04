@@ -42,14 +42,23 @@ class ApesHelper:
             """ Run Musubi with the given number of MPI processes. """
             return self.owner.startProcess(
                     self.mpiexec,
-                    arguments = ['-np', f'{np}', self.musubi, confile],
+                    arguments = ['--oversubscribe', '-np', f'{np}', self.musubi, confile],
+                    environs  = environs,
+                    stdouterr = (stdouterr+'.out', stdouterr+'.err') )
+
+        def runSeeder(self, confile = 'seeder.lua', stdouterr = 'sdrlog',
+                      environs = os.environ):
+            """ Run Seeder """
+            return self.owner.startProcess(
+                    self.seeder,
+                    arguments = [confile],
                     environs  = environs,
                     stdouterr = (stdouterr+'.out', stdouterr+'.err') )
 
         def checkMusLog(self, logfile='muslog.out'):
             """ Check for successful Musubi run. """
             self.owner.assertGrep(logfile,
-                                  expr = ' *^SUCCESSFUL run! *$',
+                                  expr = '^ *SUCCESSFUL run! *$',
                                   contains = True,
                                   abortOnError = True)
 
