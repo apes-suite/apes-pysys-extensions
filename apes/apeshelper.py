@@ -37,13 +37,37 @@ class ApesHelper:
             self.seeder = findTool('seeder')
             self.ateles = findTool('ateles')
 
-        def runMusubi(self, np = 1, confile = 'musubi.lua', stdouterr = 'muslog',
+        def setupMusubi(self, musfile = 'musubi.lua', sdrfile = 'seeder.lua', create_dirs = True):
+            """ Set up a typical musubi test case
+
+                * musfile: the musubi configuration file from the input directory to use,
+                           defaults to 'musubi.lua'
+                * sdrfile: the Seeder configuration file from the input directory to use,
+                           if None is provided, no mesh will be created. Defaults to 'seeder.lua'
+                * create_dirs: indicates whether to create 'tracking' and 'restart' subdirectories,
+                               if they exist they'll be deleted first to ensure thy are empty,
+                               defaults to True
+            """
+            config = os.path.join(self.owner.input, musfile)
+            self.owner.copy(config, os.path.join(self.owner.output, 'musubi.lua'))
+            if create_dirs:
+                self.owner.deleteDir('tracking')
+                self.owner.deleteDir('restart')
+                self.owner.mkdir('tracking')
+                self.owner.mkdir('restart')
+            if sdrfile:
+                self.owner.mkdir('mesh')
+                sdrconfig = os.path.join(self.owner.input, sdrfile)
+                self.owner.copy(sdrconfig, os.path.join(self.owner.output, 'seeder.lua'))
+                self.runSeeder()
+
+        def runMusubi(self, np = 1, stdouterr = 'muslog',
                       environs = os.environ):
             """ Run Musubi with the given number of MPI processes. """
             return self.owner.startProcess(
                     self.mpiexec,
                     displayName = f'{self.musubi}:{np}>{stdouterr}.out',
-                    arguments = ['--oversubscribe', '-np', f'{np}', self.musubi, confile],
+                    arguments = ['--oversubscribe', '-np', f'{np}', self.musubi],
                     environs  = environs,
                     stdouterr = (stdouterr+'.out', stdouterr+'.err') )
 
