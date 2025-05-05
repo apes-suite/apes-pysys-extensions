@@ -42,6 +42,7 @@ class ApesHelper:
             """ Run Musubi with the given number of MPI processes. """
             return self.owner.startProcess(
                     self.mpiexec,
+                    displayName = f'{self.musubi}:{np}>{stdouterr}.out',
                     arguments = ['--oversubscribe', '-np', f'{np}', self.musubi, confile],
                     environs  = environs,
                     stdouterr = (stdouterr+'.out', stdouterr+'.err') )
@@ -92,6 +93,7 @@ class ApesHelper:
             reference = np.loadtxt(
                         os.path.join(self.owner.reference, ref_file),
                         **loadtxt_args)
-            isClose = np.allclose(results, reference, rtol=rtol, atol=atol)
-            self.owner.assertThat("isClose", isClose=isClose, abortOnError=True,
+            self.owner.assertThat("isClose",
+                                  isClose=np.allclose(results, reference, rtol=rtol, atol=atol),
+                                  abortOnError=True,
                                   assertMessage=f"{resfile} elements within tolerance of reference")
