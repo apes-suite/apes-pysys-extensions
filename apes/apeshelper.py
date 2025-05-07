@@ -80,12 +80,53 @@ class ApesHelper:
                     environs  = environs,
                     stdouterr = (stdouterr+'.out', stdouterr+'.err') )
 
-        def checkMusLog(self, logfile='muslog.out'):
-            """ Check for successful Musubi run. """
+        def checkLog(self, logfile):
+            """ Check log for successful run. """
             self.owner.assertGrep(logfile,
                                   expr = '^ *SUCCESSFUL run! *$',
                                   contains = True,
                                   abortOnError = True)
+
+        def checkMusLog(self, logfile='muslog.out'):
+            """ Check for successful Musubi run. """
+            self.checkLog(logfile)
+
+        def checkAtlLog(self, logfile='atllog.out'):
+            """ Check for successful Ateles run. """
+            self.checkLog(logfile)
+
+        def setupAteles(self, atlfile = 'ateles.lua', sdrfile = 'seeder.lua', create_dirs = True):
+            """ Set up a typical ateles test case
+
+                * atlfile: the ateles configuration file from the input directory to use,
+                           defaults to 'ateles.lua'
+                * sdrfile: the Seeder configuration file from the input directory to use,
+                           if None is provided, no mesh will be created. Defaults to 'seeder.lua'
+                * create_dirs: indicates whether to create 'tracking' and 'restart' subdirectories,
+                               if they exist they'll be deleted first to ensure thy are empty,
+                               defaults to True
+            """
+            config = os.path.join(self.owner.input, atlfile)
+            self.owner.copy(config, os.path.join(self.owner.output, 'ateles.lua'))
+            if create_dirs:
+                self.owner.deleteDir('tracking')
+                self.owner.deleteDir('restart')
+                self.owner.mkdir('tracking')
+                self.owner.mkdir('restart')
+            if sdrfile:
+                self.owner.mkdir('mesh')
+                sdrconfig = os.path.join(self.owner.input, sdrfile)
+                self.owner.copy(sdrconfig, os.path.join(self.owner.output, 'seeder.lua'))
+                self.runSeeder()
+
+        def runAteles(self, np = 1, stdouterr = 'atllog', environs = os.environ):
+            """ Run Ateles with the given number of MPI processes. """
+            return self.owner.startProcess(
+                    self.mpiexec,
+                    displayName = f'{self.ateles}:{np}>{stdouterr}.out',
+                    arguments = ['--oversubscribe', '-np', f'{np}', self.ateles],
+                    environs  = environs,
+                    stdouterr = (stdouterr+'.out', stdouterr+'.err') )
 
         def assertIsClose(self, file, dir = None, ref_file = None, loadtxt_args = {},
                           rtol = 1.e-10, atol=1e-05):
